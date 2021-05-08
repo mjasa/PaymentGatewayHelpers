@@ -1,0 +1,278 @@
+public class PaymentUtilities {
+
+
+    private static final String MERCHANT_ID = "";
+    private static final String authToken = "";
+//private static final String authToken = "";
+    private final int SDK_REQUEST_CODE = 1001;
+
+    private Activity mActivity;
+    private PreferenceClass preferenceClass;
+    private SDKSession sdkSession;
+    private TapCurrency tapCurrency;
+
+    public PaymentUtilities(Activity mActivity) {
+        this.mActivity = mActivity;
+        preferenceClass = new PreferenceClass(mActivity);
+        tapCurrency = new TapCurrency("SAR");
+    }
+
+
+    public SDKSession startSDK(SessionDelegate sessionDelegate, double amount, double destAmount, String destID) {
+        /**
+         * Required step.
+         * Configure SDK with your Secret API key and App Bundle name registered with tap company.
+         */
+        configureApp();
+
+        /**
+         * Optional step
+         * Here you can configure your app theme (Look and Feel).
+         */
+        configureSDKThemeObject();
+
+        /**
+         * Required step.
+         * Configure SDK Session with all required data.
+         */
+        return configureSDKSession(sessionDelegate, amount, destAmount, destID);
+
+        /**
+         * Required step.
+         * Choose between different SDK modes
+         */
+//        configureSDKMode();
+
+        /**
+         * If you included Tap Pay Button then configure it first, if not then ignore this step.
+         */
+//        initPayButton();
+    }
+
+    private void configureApp() {
+        //payment settings
+        GoSellSDK.init(mActivity, authToken, mActivity.getApplicationContext().getPackageName());                 // to be replaced by merchant
+        GoSellSDK.setLocale(preferenceClass.getLang());
+    }
+
+    private void configureSDKThemeObject() {
+
+        ThemeObject.getInstance()
+
+                // set Appearance mode [Full Screen Mode - Windowed Mode]
+                .setAppearanceMode(AppearanceMode.FULLSCREEN_MODE) // **Required**
+                .setSdkLanguage(preferenceClass.getLang()) //if you dont pass locale then default locale EN will be used
+
+                // Setup header font type face **Make sure that you already have asset folder with required fonts**
+                .setHeaderFont(ResourcesCompat.getFont(mActivity, R.font.din_next_regular))//**Optional**
+
+                //Setup header text color
+                .setHeaderTextColor(mActivity.getResources().getColor(R.color.black1))  // **Optional**
+
+                // Setup header text size
+                .setHeaderTextSize(17) // **Optional**
+
+                // setup header background
+                .setHeaderBackgroundColor(mActivity.getResources().getColor(R.color.french_gray_new))//**Optional**
+
+                // setup card form input font type
+                .setCardInputFont(ResourcesCompat.getFont(mActivity, R.font.din_next_regular))//**Optional**
+
+                // setup card input field text color
+                .setCardInputTextColor(mActivity.getResources().getColor(R.color.black))//**Optional**
+
+                // setup card input field text color in case of invalid input
+                .setCardInputInvalidTextColor(mActivity.getResources().getColor(R.color.red))//**Optional**
+
+                // setup card input hint text color
+                .setCardInputPlaceholderTextColor(mActivity.getResources().getColor(R.color.black))//**Optional**
+
+                // setup Switch button Thumb Tint Color in case of Off State
+                .setSaveCardSwitchOffThumbTint(mActivity.getResources().getColor(R.color.gray)) // **Optional**
+
+                // setup Switch button Thumb Tint Color in case of On State
+                .setSaveCardSwitchOnThumbTint(mActivity.getResources().getColor(R.color.vibrant_green)) // **Optional**
+
+                // setup Switch button Track Tint Color in case of Off State
+                .setSaveCardSwitchOffTrackTint(mActivity.getResources().getColor(R.color.gray)) // **Optional**
+
+                // setup Switch button Track Tint Color in case of On State
+                .setSaveCardSwitchOnTrackTint(mActivity.getResources().getColor(R.color.vibrant_green)) // **Optional**
+
+                // change scan icon
+                .setScanIconDrawable(mActivity.getResources().getDrawable(R.drawable.btn_card_scanner_normal)) // **Optional**
+
+                // setup pay button selector [ background - round corner ]
+                .setPayButtonResourceId(R.drawable.btn_pay_selector)
+
+                // setup pay button font type face
+                .setPayButtonFont(ResourcesCompat.getFont(mActivity, R.font.din_next_regular)) // **Optional**
+
+                // setup pay button disable title color
+                .setPayButtonDisabledTitleColor(mActivity.getResources().getColor(R.color.black)) // **Optional**
+
+                // setup pay button enable title color
+                .setPayButtonEnabledTitleColor(mActivity.getResources().getColor(R.color.White)) // **Optional**
+
+                //setup pay button text size
+                .setPayButtonTextSize(14) // **Optional**
+
+                // show/hide pay button loader
+                .setPayButtonLoaderVisible(true) // **Optional**
+
+                // show/hide pay button security icon
+                .setPayButtonSecurityIconVisible(true) // **Optional**
+
+                // set the text on pay button
+                .setPayButtonText(mActivity.getString(R.string.pay_now)) // **Optional**
+
+
+                // setup dialog textcolor and textsize
+                .setDialogTextColor(mActivity.getResources().getColor(R.color.black1))     // **Optional**
+                .setDialogTextSize(17)                // **Optional**
+
+        ;
+
+    }
+
+    private SDKSession configureSDKSession(SessionDelegate sessionDelegate, double valAmount, double destAmount, String destID) {
+
+        // Instantiate SDK Session
+        if (sdkSession == null) sdkSession = new SDKSession();   //** Required **
+
+        // pass your activity as a session delegate to listen to SDK internal payment process follow
+        sdkSession.addSessionDelegate(sessionDelegate);    //** Required **
+
+        // initiate PaymentDataSource
+        sdkSession.instantiatePaymentDataSource();    //** Required **
+
+        // set transaction currency associated to your account
+        sdkSession.setTransactionCurrency(tapCurrency);    //** Required **
+
+        // Using static CustomerBuilder method available inside TAP Customer Class you can populate TAP Customer object and pass it to SDK
+
+        sdkSession.setCustomer(getCustomer());    //** Required **
+
+        // Set Total Amount. The Total amount will be recalculated according to provided Taxes and Shipping
+        sdkSession.setAmount(new BigDecimal(valAmount));  //** Required **
+
+        // Set Payment Items array list
+        sdkSession.setPaymentItems(new ArrayList<PaymentItem>());// ** Optional ** you can pass empty array list
+
+        // Set Taxes array list
+        sdkSession.setTaxes(new ArrayList<Tax>());// ** Optional ** you can pass empty array list
+
+        // Set Shipping array list
+
+        sdkSession.setShipping(new ArrayList<>());// ** Optional ** you can pass empty array list
+
+        // Post URL
+        sdkSession.setPostURL(""); // ** Optional **
+
+        // Payment Description
+        sdkSession.setPaymentDescription(""); //** Optional **
+
+        // Payment Extra Info
+        sdkSession.setPaymentMetadata(new HashMap<>());// ** Optional ** you can pass empty array hash map
+
+        // Payment Reference
+        sdkSession.setPaymentReference(null); // ** Optional ** you can pass null
+
+        // Payment Statement Descriptor
+        sdkSession.setPaymentStatementDescriptor(""); // ** Optional **
+
+        // Enable or Disable Saving Card
+        sdkSession.isUserAllowedToSaveCard(true); //  ** Required ** you can pass boolean
+
+        // Enable or Disable 3DSecure
+        sdkSession.isRequires3DSecure(true);
+
+        //Set Receipt Settings [SMS - Email ]
+        sdkSession.setReceiptSettings(null); // ** Optional ** you can pass Receipt object or null
+
+        // Set Authorize Action
+        sdkSession.setAuthorizeAction(null); // ** Optional ** you can pass AuthorizeAction object or null
+
+        // use this
+        Destination destination = new Destination(destID, new BigDecimal(destAmount), tapCurrency, "", "");
+        ArrayList<Destination> destinationList = new ArrayList<>();
+        destinationList.add(destination);
+        Destinations destinations = new Destinations(new BigDecimal(destAmount), tapCurrency, 1, destinationList);
+        sdkSession.setDestination(destinations); // ** Optional ** you can pass Destinations object or null
+
+        sdkSession.setMerchantID(MERCHANT_ID); // ** Optional ** you can pass merchant id or null
+
+        sdkSession.setPaymentType("CARD");   //** Merchant can customize payment options [WEB/CARD] for each transaction or it will show all payment options granted to him.
+
+        //todo
+//        sdkSession.setCardType(CardType.CREDIT); // ** Optional ** you can pass which cardType[CREDIT/DEBIT] you want.By default it loads all available cards for Merchant.
+
+
+        sdkSession.isUserAllowedToEnableCardHolderName(true); //** Optional ** you can enable/ disable  default CardHolderName .
+//        sdkSession.start(mActivity);
+
+        return sdkSession;
+        /**
+         * Use this method where ever you want to show TAP SDK Main Screen.
+         * This method must be called after you configured SDK as above
+         * This method will be used in case of you are not using TAP PayButton in your activity.
+         */
+    }
+
+
+    public void initPayButton(SDKSession sdkSession, PayButtonView payButtonView) {
+
+        if (ThemeObject.getInstance().getPayButtonFont() != null)
+            payButtonView.setupFontTypeFace(ThemeObject.getInstance().getPayButtonFont());
+        if (ThemeObject.getInstance().getPayButtonDisabledTitleColor() != 0 && ThemeObject.getInstance().getPayButtonEnabledTitleColor() != 0)
+            payButtonView.setupTextColor(ThemeObject.getInstance().getPayButtonEnabledTitleColor(),
+                    ThemeObject.getInstance().getPayButtonDisabledTitleColor());
+        if (ThemeObject.getInstance().getPayButtonTextSize() != 0)
+            payButtonView.getPayButton().setTextSize(ThemeObject.getInstance().getPayButtonTextSize());
+//
+        if (ThemeObject.getInstance().isPayButtSecurityIconVisible())
+            payButtonView.getSecurityIconView().setVisibility(ThemeObject.getInstance().isPayButtSecurityIconVisible() ? View.VISIBLE : View.INVISIBLE);
+        if (ThemeObject.getInstance().getPayButtonResourceId() != 0)
+            payButtonView.setBackgroundSelector(ThemeObject.getInstance().getPayButtonResourceId());
+
+        if (sdkSession != null) {
+            TransactionMode trx_mode = sdkSession.getTransactionMode();
+            if (trx_mode != null) {
+
+                if (TransactionMode.SAVE_CARD == trx_mode || TransactionMode.SAVE_CARD_NO_UI == trx_mode) {
+                    payButtonView.getPayButton().setText(mActivity.getString(company.tap.gosellapi.R.string.save_card));
+                } else if (TransactionMode.TOKENIZE_CARD == trx_mode || TransactionMode.TOKENIZE_CARD_NO_UI == trx_mode) {
+                    payButtonView.getPayButton().setText(mActivity.getString(company.tap.gosellapi.R.string.tokenize));
+                } else {
+                    payButtonView.getPayButton().setText(mActivity.getString(company.tap.gosellapi.R.string.pay));
+                }
+            } else {
+                configureSDKMode(sdkSession);
+            }
+            sdkSession.setButtonView(payButtonView, mActivity, SDK_REQUEST_CODE);
+        }
+    }
+
+
+    private void configureSDKMode(SDKSession sdkSession) {
+        startSDKWithUI(sdkSession);
+    }
+
+    private void startSDKWithUI(SDKSession sdkSession) {
+        if (sdkSession != null) {
+            TransactionMode trx_mode = TransactionMode.PURCHASE;
+            // set transaction mode [TransactionMode.PURCHASE - TransactionMode.AUTHORIZE_CAPTURE - TransactionMode.SAVE_CARD - TransactionMode.TOKENIZE_CARD ]
+            sdkSession.setTransactionMode(trx_mode);    //** Required **
+            // if you are not using tap button then start SDK using the following call
+            //sdkSession.start(this);
+        }
+    }
+
+    private Customer getCustomer() {
+        return new Customer.CustomerBuilder(null).email(preferenceClass.getUser().getEmail()).firstName(preferenceClass.getUser().getName())
+                .lastName("").metadata("test").phone(new PhoneNumber("966", preferenceClass.getUser().getPhone()))
+                .middleName("").build();
+    }
+
+
+}
