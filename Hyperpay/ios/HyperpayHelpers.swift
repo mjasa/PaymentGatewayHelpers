@@ -76,7 +76,7 @@ class HyperpayHelpers: NSObject {
                     checkoutSettings.paymentBrands = ["MADA"]
                     checkoutSettings.storePaymentDetails = .prompt
                 } else if type == .visa{
-                    checkoutSettings.paymentBrands = ["VISA"]
+                    checkoutSettings.paymentBrands = ["VISA","MASTER"]
                 }  else if type == .stc{
                     checkoutSettings.paymentBrands = ["STC_PAY"]
                 } else if type == .apple_pay {
